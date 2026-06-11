@@ -45,6 +45,21 @@ function Comment({ comment, postId, depth = 0 }) {
       authorPhoto: user.photoURL || "",
       createdAt: serverTimestamp()
     });
+
+    // 🟢 TAMBAHAN 1: Kirim notifikasi BALASAN KOMENTAR (Reply)
+    // Notifikasi hanya dikirim jika yang membalas adalah orang lain (bukan pemilik komentar itu sendiri)
+    if (comment.authorId && comment.authorId !== user.uid) {
+      await addDoc(collection(db, "notifications"), {
+        toUid: comment.authorId,                                 // ID Pemilik komentar utama
+        fromUid: user.uid,                                       // ID Kamu yang membalas
+        fromName: user.displayName || user.email || "Seseorang", // Nama kamu
+        type: "reply",                                           // Tipe balasan komentar
+        postId: postId,                                          // ID Postingan agar pas diklik lari ke sini
+        createdAt: serverTimestamp(),
+        read: false
+      });
+    }
+
     setReplyText(""); setShowReply(false); setLoading(false);
   };
 
@@ -117,6 +132,21 @@ export default function PostDetail() {
       createdAt: serverTimestamp()
     });
     await updateDoc(doc(db, "posts", id), { commentCount: increment(1) });
+
+    // 🟢 TAMBAHAN 2: Kirim notifikasi KOMENTAR BARU (Comment)
+    // Notifikasi hanya dikirim jika yang berkomentar adalah orang lain (bukan pemilik postingan itu sendiri)
+    if (post && post.authorId && post.authorId !== user.uid) {
+      await addDoc(collection(db, "notifications"), {
+        toUid: post.authorId,                                    // ID Pemilik postingan asli
+        fromUid: user.uid,                                       // ID Kamu yang ngasih komentar
+        fromName: user.displayName || user.email || "Seseorang", // Nama kamu
+        type: "comment",                                         // Tipe komentar
+        postId: id,                                              // ID Postingan
+        createdAt: serverTimestamp(),
+        read: false
+      });
+    }
+
     setCommentText(""); setLoading(false);
   };
 

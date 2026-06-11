@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+// 🟢 TAMBAHAN: Import collection, addDoc, dan serverTimestamp dari firebase
+import { doc, updateDoc, arrayUnion, arrayRemove, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
 import styles from "./PostCard.module.css";
@@ -15,12 +16,27 @@ export default function PostCard({ post }) {
     e.preventDefault();
     if (!user) return;
     const ref = doc(db, "posts", post.id);
+    
     if (isLiked) {
       await updateDoc(ref, { likes: arrayRemove(user.uid) });
       setLikeCount(c => c - 1);
     } else {
       await updateDoc(ref, { likes: arrayUnion(user.uid) });
       setLikeCount(c => c + 1);
+
+      // 🟢 TAMBAHAN FITUR NOTIFIKASI LIKE
+      // Notifikasi hanya dikirim jika yang me-like adalah orang lain (bukan pemilik postingan itu sendiri)
+      if (post.authorId && post.authorId !== user.uid) {
+        await addDoc(collection(db, "notifications"), {
+          toUid: post.authorId,                           // ID Pemilik postingan yang menerima notif
+          fromUid: user.uid,                              // ID Kamu yang melakukan like
+          fromName: user.displayName || user.email || "Seseorang", // Nama kamu yang bakal muncul di notif
+          type: "like",                                   // Tipe notifikasi
+          postId: post.id,                                // ID Postingan untuk dilempar pas diklik
+          createdAt: serverTimestamp(),                   // Waktu real-time server Firebase
+          read: false                                     // Status awal belum dibaca
+        });
+      }
     }
     setIsLiked(!isLiked);
   };

@@ -1,122 +1,100 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { db } from "../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
-import styles from "./Compose.module.css";
 
 export default function Compose() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [text, setText] = useState("");
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const fileRef = useRef();
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const extractGadgetTag = (t) => {
-    const match = t.match(/#(\w[\w\s]*\w|\w+)/);
-    return match ? match[1] : null;
-  };
-
-  const handleImage = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!text.trim() && !image) return;
-    setLoading(true);
-
-    let imageUrl = null;
-    if (image) {
-      const storageRef = ref(storage, `posts/${user.uid}_${Date.now()}`);
-      await uploadBytes(storageRef, image);
-      imageUrl = await getDownloadURL(storageRef);
+  const handlePost = async () => {
+    if (!content.trim()) return;
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, "posts"), {
+        content: content,
+        userId: user?.uid || "anonymous",
+        userName: user?.displayName || "Sultan Muhammad",
+        userPhoto: user?.photoURL || "",
+        likesCount: 0,
+        commentsCount: 0,
+        createdAt: serverTimestamp()
+      });
+      navigate("/");
+    } catch (err) {
+      console.error("Gagal mengirim postingan:", err);
+    } finally {
+      setSubmitting(false);
     }
-
-    const gadgetTag = extractGadgetTag(text);
-
-    await addDoc(collection(db, "posts"), {
-      text: text.trim(),
-      imageUrl,
-      gadgetTag,
-      authorId: user.uid,
-      authorName: user.displayName || user.email,
-      authorPhoto: user.photoURL || "",
-      likes: [],
-      commentCount: 0,
-      createdAt: serverTimestamp()
-    });
-
-    navigate("/");
   };
-
-  const charLimit = 500;
 
   return (
-    <div className="page">
-      <div className={styles.header}>
-        <button className="btn-ghost" onClick={() => navigate(-1)}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        </button>
-        <h2 style={{fontSize:16, fontWeight:500}}>Buat Postingan</h2>
-        <button
-          className="btn-primary"
-          style={{padding:"7px 18px"}}
-          onClick={handleSubmit}
-          disabled={loading || (!text.trim() && !image)}
+    <div style={{ maxWidth: "600px", margin: "40px auto", padding: "20px", color: "#fff", backgroundColor: "#1e1e1e", borderRadius: "8px", border: "1px solid #333" }}>
+      
+      {/* Top Header Menu */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <button onClick={() => navigate(-1)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: "18px" }}>←</button>
+        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>Buat Postingan</h3>
+        <button 
+          onClick={handlePost} 
+          disabled={submitting || !content.trim()}
+          style={{
+            backgroundColor: content.trim() ? "#3b82f6" : "#2d2d2d",
+            color: content.trim() ? "#fff" : "#666",
+            border: "none",
+            padding: "6px 16px",
+            borderRadius: "6px",
+            fontWeight: "700",
+            cursor: content.trim() ? "pointer" : "default"
+          }}
         >
-          {loading ? "Posting..." : "Post"}
+          {submitting ? "Memuat..." : "Post"}
         </button>
       </div>
 
-      <div className={styles.composer}>
-        <img
-          src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || user?.email}&background=3b82f6&color=fff`}
-          className="avatar"
-          alt="you"
-        />
-        <div className={styles.inputArea}>
-          <textarea
-            placeholder="Ceritain gadget kamu... gunakan #NamaGadget untuk tag gadget dan @username untuk mention"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            maxLength={charLimit}
-            rows={4}
-            className={styles.textarea}
-          />
+      {/* Input Text Area */}
+      <textarea
+        placeholder="Ceritain gadget kamu... gunakan #NamaGadget untuk tag gadget dan @username untuk mention"
+        value={content}
+        onChange={(e) => setContent(e.target.value.slice(0, 500))}
+        style={{
+          width: "100%",
+          height: "150px",
+          backgroundColor: "transparent",
+          border: "none",
+          color: "#fff",
+          fontSize: "15px",
+          resize: "none",
+          outline: "none",
+          lineHeight: "1.6"
+        }}
+      />
 
-          {preview && (
-            <div className={styles.previewWrap}>
-              <img src={preview} className={styles.preview} alt="preview" />
-              <button className={styles.removeImg} onClick={() => { setImage(null); setPreview(null); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-          )}
-
-          <div className={styles.toolbar}>
-            <button className="btn-ghost" onClick={() => fileRef.current.click()} style={{padding:"4px 8px",fontSize:13}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              Foto
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} style={{display:"none"}} />
-            <span className={styles.counter} style={{color: text.length > charLimit * 0.9 ? "var(--danger)" : "var(--text2)"}}>
-              {text.length}/{charLimit}
-            </span>
-          </div>
-
-          <div className={styles.hints}>
-            <span className={styles.hint}>#Samsung · #iPhone15 → tag gadget</span>
-            <span className={styles.hint}>@username → mention pengguna</span>
-          </div>
+      {/* 🛠️ BARIS AKSESORI MEDIA (DIBERI GAP AGAR TIDAK DEMPET) */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", borderTop: "1px solid #2d2d2d", paddingTop: "14px" }}>
+        
+        {/* Kontainer Foto dengan Jarak Seimbang */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#aaa", cursor: "pointer" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span style={{ fontSize: "14px", fontWeight: "500" }}>Foto</span>
         </div>
+
+        <span style={{ fontSize: "12px", color: "#666" }}>{content.length}/500</span>
       </div>
+
+      {/* Hint Tags Bawah */}
+      <div style={{ display: "flex", gap: "10px", marginTop: "16px", flexWrap: "wrap" }}>
+        <span style={{ backgroundColor: "#252526", padding: "4px 10px", borderRadius: "4px", fontSize: "11px", color: "#aaa" }}>#Samsung #iPhone15 → tag gadget</span>
+        <span style={{ backgroundColor: "#252526", padding: "4px 10px", borderRadius: "4px", fontSize: "11px", color: "#aaa" }}>@username → mention pengguna</span>
+      </div>
+
     </div>
   );
 }

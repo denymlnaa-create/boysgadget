@@ -54,9 +54,42 @@ export default function GadgetDetail() {
           <div className={styles.heroInfo}>
             <p className={styles.heroName}>{specs.phone_name}</p>
             {specs.release_date && <p className={styles.heroSub}>Rilis: {specs.release_date}</p>}
+            
+            {/* 🟢 FITUR TAMBAHAN: Tombol Tanya Admin Spesifik sesuai HP yang sedang dilihat */}
+            <a 
+              href={`https://wa.me/6281234567890?text=Halo%20Admin%20BoysGadget,%20saya%20mau%20tanya%20dan%20konsultasi%20mengenai%20HP%20${encodeURIComponent(specs.phone_name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                marginTop: 10,
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#25d366",
+                textDecoration: "none",
+                padding: "6px 12px",
+                borderRadius: 20,
+                background: "rgba(37, 211, 102, 0.1)",
+                border: "1px solid rgba(37, 211, 102, 0.2)"
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Tanya Admin Tentang HP Ini
+            </a>
           </div>
         </div>
       )}
+
+      {/* 💡 TIPS TAMBAHAN: Panduan singkat membaca data spesifikasi */}
+      <div style={{padding:"0 16px", marginBottom: 12}}>
+        <div style={{background:"var(--bg2, rgba(255,255,255,0.03))", borderRadius: 8, padding: 12, border: "1px solid var(--border, rgba(255,255,255,0.05))"}}>
+          <p style={{fontSize:12, color:"var(--text2, #aaa)", margin:0, lineHeight: "1.5"}}>
+            💡 <strong>Panduan Pemula:</strong> Gunakan tab <b>Spesifikasi</b> untuk mengenali detail komponen resmi, atau pindah ke tab <b>Diskusi</b> untuk melihat review jujur dari komunitas.
+          </p>
+        </div>
+      </div>
 
       <div className={styles.tabs}>
         <button className={tab === "specs" ? styles.active : ""} onClick={() => setTab("specs")}>Spesifikasi</button>
