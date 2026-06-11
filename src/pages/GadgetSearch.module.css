@@ -1,0 +1,25 @@
+.title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+
+.searchForm { display: flex; gap: 8px; margin-bottom: 20px; }
+.searchForm input { flex: 1; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+
+.phoneCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.phoneCard:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+.phoneImg { width: 100%; height: 140px; object-fit: contain; background: var(--bg3); padding: 8px; }
+
+.phoneInfo { padding: 10px; }
+
+.phoneName { font-size: 13px; font-weight: 500; line-height: 1.3; margin-bottom: 3px; }
+
+.phoneBrand { font-size: 11px; color: var(--text2); }

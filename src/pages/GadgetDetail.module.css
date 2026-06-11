@@ -1,0 +1,56 @@
+.heroWrap { display: flex; align-items: center; gap: 16px; padding: 0 16px 16px; }
+
+.heroImg { width: 80px; height: 80px; object-fit: contain; background: var(--bg3); border-radius: var(--radius-sm); padding: 6px; }
+
+.heroName { font-size: 16px; font-weight: 600; }
+.heroSub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.tabs button {
+  flex: 1;
+  background: transparent;
+  color: var(--text2);
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.specsTable { padding: 8px 16px; }
+
+.specSection { margin-bottom: 20px; }
+
+.specTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.specRow {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.specKey {
+  color: var(--text2);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.specVal { color: var(--text); line-height: 1.5; }

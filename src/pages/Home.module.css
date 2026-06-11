@@ -1,0 +1,50 @@
+.wrap { max-width: 600px; margin: 0 auto; position: relative; min-height: calc(100vh - 60px); }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 57px;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.tabs button {
+  flex: 1;
+  background: transparent;
+  color: var(--text2);
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tabs button:hover { color: var(--text); }
+.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.empty {
+  text-align: center;
+  color: var(--text2);
+  padding: 60px 20px;
+  font-size: 14px;
+}
+
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+  transition: background 0.15s, transform 0.1s;
+}
+
+.fab:hover { background: var(--accent2); transform: scale(1.05); }

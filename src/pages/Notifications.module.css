@@ -1,0 +1,38 @@
+.notif {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  transition: background 0.15s;
+  border-radius: var(--radius-sm);
+}
+
+.notif:hover { background: var(--bg2); }
+.unread { background: rgba(59,130,246,0.05); }
+
+.iconWrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notifBody { flex: 1; }
+
+.notifText { font-size: 14px; line-height: 1.4; }
+
+.notifTime { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}

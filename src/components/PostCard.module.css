@@ -1,0 +1,96 @@
+.card {
+  display: block;
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+  transition: background 0.15s;
+  color: var(--text);
+}
+
+.card:hover { background: var(--bg2); }
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.meta { display: flex; flex-direction: column; gap: 2px; }
+
+.name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.name:hover { color: var(--accent); }
+
+.time { font-size: 12px; color: var(--text2); }
+
+.body {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tagLink {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.tagLink:hover { text-decoration: underline; }
+
+.mention { color: #60a5fa; font-weight: 500; }
+
+.postImage {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.gadgetChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+
+.gadgetLink { color: var(--text2); }
+.gadgetLink:hover { color: var(--accent); }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.likeBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  color: var(--text2);
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.likeBtn:hover { color: var(--danger); }
+.likeBtn.liked { color: var(--danger); }
+
+.commentCount {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text2);
+}
