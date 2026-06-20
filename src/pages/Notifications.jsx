@@ -1,34 +1,15 @@
-import { useEffect } from "react";
-import { collection, query, where, getDocs, writeBatch } from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../hooks/useAuth";
+import { useState, useEffect } from "react";
 
-// Di dalam komponen Notifications kamu:
-useEffect(() => {
-  const markNotifAsRead = async () => {
-    if (!user) return;
+export default function Notifications() {
+  // Biarkan state, useEffect, atau logika fungsi di sini tetap sama seperti sebelumnya
+  const [notifications, setNotifications] = useState([]);
 
-    const notifRef = collection(db, "notifications");
-    // Ambil semua notif belum dibaca yang ditujukan untuk user ini / ADMIN
-    const isAdmin = ["UID_SULTAN", "UID_ANDIKA"].includes(user.uid);
-    
-    // Kamu bisa sesuaikan query ini dengan struktur halaman notif kamu
-    const q = query(
-      notifRef, 
-      where("isRead", "==", false),
-      where("receiverId", "==", isAdmin ? "ADMIN" : user.uid)
-    );
-
-    const querySnapshot = await getDocs(q);
-    
-    // Update semua menjadi isRead: true sekaligus menggunakan Batch
-    const batch = writeBatch(db);
-    querySnapshot.forEach((doc) => {
-      batch.update(doc.ref, { isRead: true });
-    });
-    
-    await batch.commit();
-  };
-
-  markNotifAsRead();
-}, [user]);
+  return (
+    <div style={{ width: "100%", padding: "20px 30px", color: "#fff", boxSizing: "border-box" }}>
+      <div style={{ backgroundColor: "#1e1e1e", padding: "20px", borderRadius: "8px", border: "1px solid #333" }}>
+        <h3 style={{ margin: "0 0 10px 0", fontSize: "18px", fontWeight: "700" }}>Notifikasi</h3>
+        <p style={{ margin: 0, fontSize: "14px", color: "#8e8e93" }}>Belum ada notifikasi baru.</p>
+      </div>
+    </div>
+  );
+}

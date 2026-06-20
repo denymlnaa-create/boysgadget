@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot, limit } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, limit, doc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, increment } from "firebase/firestore";
 import { db } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -13,6 +13,7 @@ export default function Home() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("trending");
+  const [sidebarTab, setSidebarTab] = useState("kamera"); // State tab kategori untuk Top Skor Global
 
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -36,8 +37,8 @@ export default function Home() {
 
   useEffect(() => {
     const gadgetRef = collection(db, "gadgets");
-    const q = query(gadgetRef, orderBy("scoreGlobal", "desc"), limit(5));
-    const unsub = onSnapshot(q, (snap) => {
+    // Mengambil data gadget agar pengurutan per kategori spek valid dan akurat
+    const unsub = onSnapshot(gadgetRef, (snap) => {
       setTopGadgets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
@@ -82,8 +83,12 @@ export default function Home() {
     return unsub;
   }, []);
 
-  // Mempersiapkan item cadangan (mock data) seandainya Firestore kosong / belum ke-load sempurna
-  const carouselItems = topGadgets.length > 0 ? topGadgets : [
+  // Menjaga agar isi Carousel Hero teratas tetap merupakan Top 5 Global Score secara konisten
+  const globalTop5 = [...topGadgets]
+    .sort((a, b) => (b.scoreGlobal || 0) - (a.scoreGlobal || 0))
+    .slice(0, 5);
+
+  const carouselItems = globalTop5.length > 0 ? globalTop5 : [
     {
       name: "iPhone 15 Pro Max",
       brand: "Apple",
@@ -104,13 +109,53 @@ export default function Home() {
     }
   ];
 
-  // Logika interval diperbaiki agar mengacu pada panjang total item array yang tersedia
+  // Logika pengurutan valid untuk Top 1-5 di Sidebar berdasarkan kategori spesifikasi teraktif
+  const getSortedSidebarGadgets = () => {
+    let scoreField = "scoreGlobal";
+    if (sidebarTab === "kamera") scoreField = "scoreCamera";
+    else if (sidebarTab === "performa") scoreField = "scorePerformance";
+    else if (sidebarTab === "layar") scoreField = "scoreDisplay";
+    else if (sidebarTab === "baterai") scoreField = "scoreBattery";
+
+    return [...topGadgets]
+      .filter(g => typeof g[scoreField] === "number")
+      .sort((a, b) => (b[scoreField] || 0) - (a[scoreField] || 0))
+      .slice(0, 5);
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
     }, 4000);
     return () => clearInterval(interval);
   }, [carouselItems.length]);
+
+  const handleLikePost = async (e, post) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) return;
+
+    const liked = post.likes?.includes(user.uid);
+    const ref = doc(db, "posts", post.id);
+
+    if (liked) {
+      await updateDoc(ref, { likes: arrayRemove(user.uid), likesCount: increment(-1) });
+    } else {
+      await updateDoc(ref, { likes: arrayUnion(user.uid), likesCount: increment(1) });
+
+      if (post.userId && post.userId !== user.uid) {
+        await addDoc(collection(db, "notifications"), {
+          toUid: post.userId,
+          fromUid: user.uid,
+          fromName: user.displayName || user.email || "Seseorang",
+          type: "like",
+          postId: post.id,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
+    }
+  };
 
   if (loading) return <div className="spinner" />;
 
@@ -151,7 +196,6 @@ export default function Home() {
             </span>
           </div>
           
-          {/* Key dipasang di teks h1 & p agar memicu re-render efek transisi pudar saat slide berganti */}
           <h1 key={`title-${currentSlide}`} style={{ fontSize: "42px", fontWeight: "900", marginBottom: "16px", letterSpacing: "-0.5px", lineHeight: "1.2", animation: "fadeIn 0.5s ease-in-out" }}>
             {featuredGadget.name}
           </h1>
@@ -227,7 +271,7 @@ export default function Home() {
         `}</style>
       </div>
 
-      {/* Grid Kolom Utama, Diskusi, Berita, & Sidebar */}
+      {/* Grid Utama */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "30px", alignItems: "start" }}>
         
         <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
@@ -296,28 +340,39 @@ export default function Home() {
                   <p style={{ margin: 0, fontSize: "14px" }}>Belum ada diskusi hari ini.</p>
                 </div>
               ) : (
-                posts.map((post) => (
-                  <div key={post.id} style={{ backgroundColor: "#1e1e1e", padding: "16px", borderRadius: "8px", border: "1px solid #333" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                      <img src={post.userPhoto || `https://ui-avatars.com/api/?name=${post.userName}&background=random`} alt="avatar" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover" }} />
-                      <div>
-                        <h5 style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>{post.userName}</h5>
-                        <span style={{ fontSize: "11px", color: "#aaa" }}>
-                          {post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : "Baru saja"}
-                        </span>
+                posts.map((post) => {
+                  const isLiked = post.likes?.includes(user?.uid);
+                  const likeCount = post.likesCount || 0;
+                  return (
+                    <div key={post.id} style={{ backgroundColor: "#1e1e1e", padding: "16px", borderRadius: "8px", border: "1px solid #333" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                        <img src={post.userPhoto || `https://ui-avatars.com/api/?name=${post.userName}&background=random`} alt="avatar" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover" }} />
+                        <div>
+                          <h5 style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>{post.userName}</h5>
+                          <span style={{ fontSize: "11px", color: "#aaa" }}>
+                            {post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : "Baru saja"}
+                          </span>
+                        </div>
+                      </div>
+                      <Link to={`/post/${post.id}`} style={{ textDecoration: "none", color: "#fff" }}>
+                        <p style={{ fontSize: "14px", lineHeight: "1.5", marginBottom: "14px", color: "#eee" }}>{post.content}</p>
+                      </Link>
+                      <div style={{ display: "flex", gap: "16px", fontSize: "13px", color: "#aaa" }}>
+                        <div
+                          onClick={(e) => handleLikePost(e, post)}
+                          style={{ display: "flex", alignItems: "center", gap: "6px", cursor: user ? "pointer" : "default" }}
+                        >
+                          <svg width="16" height="16" fill={isLiked ? "#ef4444" : "none"} stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                          <span>{likeCount}</span>
+                        </div>
+                        <Link to={`/post/${post.id}`} style={{ display: "flex", alignItems: "center", gap: "6px", color: "#aaa", textDecoration: "none" }}>
+                          <svg width="16" height="16" fill="none" stroke="#aaa" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          <span>{post.commentsCount || 0}</span>
+                        </Link>
                       </div>
                     </div>
-                    <Link to={`/post/${post.id}`} style={{ textDecoration: "none", color: "#fff" }}>
-                      <p style={{ fontSize: "14px", lineHeight: "1.5", marginBottom: "14px", color: "#eee" }}>{post.content}</p>
-                    </Link>
-                    <div style={{ display: "flex", gap: "16px", fontSize: "13px", color: "#aaa" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <svg width="16" height="16" fill="#ef4444" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                        <span>{post.likesCount || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -383,22 +438,73 @@ export default function Home() {
 
         </div>
 
+        {/* Sidebar Kanan */}
         <aside style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          
+          {/* Card Top Skor Global dengan Tab Kategori */}
           <div style={{ backgroundColor: "#1e1e1e", padding: "20px", borderRadius: "8px", border: "1px solid #333" }}>
             <h4 style={{ margin: "0 0 4px 0", fontSize: "15px", fontWeight: "700" }}>🏆 Top Skor Global</h4>
-            <p style={{ margin: "0 0 16px 0", fontSize: "12px", color: "#8e8e93" }}>Peringkat performa menyeluruh</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {topGadgets.slice(0, 3).map((gadget, index) => (
-                <div key={gadget.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "10px", borderBottom: index !== 2 ? "1px solid #2d2d2d" : "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ fontWeight: "700", color: index === 0 ? "#eab308" : index === 1 ? "#cbd5e1" : "#fff" }}>#{index + 1}</span>
-                    <Link to={`/gadget/${encodeURIComponent(gadget.name)}`} style={{ textDecoration: "none", color: "#fff", fontSize: "13px" }}>{gadget.name}</Link>
-                  </div>
-                  <span style={{ backgroundColor: "#3b82f6", padding: "2px 8px", borderRadius: "4px", fontSize: "11px" }}>{gadget.scoreGlobal || 0}</span>
-                </div>
+            <p style={{ margin: "0 0 16px 0", fontSize: "12px", color: "#8e8e93" }}>Peringkat performa aspek spesifikasi</p>
+            
+            {/* Navigasi Tab Kategori Mikro */}
+            <div style={{ display: "flex", gap: "4px", marginBottom: "16px", borderBottom: "1px solid #2d2d30", paddingBottom: "8px", overflowX: "auto" }}>
+              {[
+                { id: "kamera", label: "Kamera" },
+                { id: "performa", label: "Performa" },
+                { id: "layar", label: "Layar" },
+                { id: "baterai", label: "Baterai" }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSidebarTab(tab.id)}
+                  style={{
+                    backgroundColor: sidebarTab === tab.id ? "#3b82f6" : "transparent",
+                    color: sidebarTab === tab.id ? "#fff" : "#8e8e93",
+                    border: "none",
+                    padding: "4px 10px",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  {tab.label}
+                </button>
               ))}
-              <div style={{ textAlign: "center", marginTop: "8px" }}>
-                <Link to="/leaderboard" style={{ textDecoration: "none", color: "#3b82f6", fontSize: "13px", fontWeight: "600" }}>Lihat Semua Peringkat →</Link>
+            </div>
+
+            {/* List Item Peringkat 1-5 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {getSortedSidebarGadgets().length === 0 ? (
+                <p style={{ margin: 0, fontSize: "13px", color: "#8e8e93", textAlign: "center", padding: "8px 0" }}>
+                  Belum ada data skor untuk kategori ini.
+                </p>
+              ) : (
+                getSortedSidebarGadgets().map((gadget, index, arr) => {
+                  let scoreField = "scoreGlobal";
+                  if (sidebarTab === "kamera") scoreField = "scoreCamera";
+                  else if (sidebarTab === "performa") scoreField = "scorePerformance";
+                  else if (sidebarTab === "layar") scoreField = "scoreDisplay";
+                  else if (sidebarTab === "baterai") scoreField = "scoreBattery";
+
+                  return (
+                    <div key={gadget.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "10px", borderBottom: index !== arr.length - 1 ? "1px solid #2d2d2d" : "none" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontWeight: "700", color: index === 0 ? "#eab308" : index === 1 ? "#cbd5e1" : index === 2 ? "#cd7f32" : "#fff" }}>#{index + 1}</span>
+                        <Link to={`/gadget/${encodeURIComponent(gadget.name)}`} style={{ textDecoration: "none", color: "#fff", fontSize: "13px" }}>{gadget.name}</Link>
+                      </div>
+                      <span style={{ backgroundColor: "#3b82f6", padding: "2px 8px", borderRadius: "4px", fontSize: "11px" }}>{gadget[scoreField]}</span>
+                    </div>
+                  );
+                })
+              )}
+              
+              <div style={{ textAlign: "center", marginTop: "12px" }}>
+                <Link to="/leaderboard" style={{ textDecoration: "none", color: "#3b82f6", fontSize: "13px", fontWeight: "600" }}>
+                  Lihat Semua Top Skor Global →
+                </Link>
               </div>
             </div>
           </div>

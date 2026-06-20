@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   doc, getDoc, collection, addDoc, onSnapshot,
-  query, orderBy, serverTimestamp, updateDoc, increment
+  query, orderBy, serverTimestamp, updateDoc, increment,
+  arrayUnion, arrayRemove
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
@@ -109,17 +110,24 @@ export default function PostDetail() {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
   useEffect(() => {
     getDoc(doc(db, "posts", id)).then(d => {
-      if (d.exists()) setPost({ id: d.id, ...d.data() });
+      if (d.exists()) {
+        const data = { id: d.id, ...d.data() };
+        setPost(data);
+        setLikeCount(data.likes?.length || 0);
+        setIsLiked(data.likes?.includes(user?.uid));
+      }
     });
     const q = query(collection(db, "posts", id, "comments"), orderBy("createdAt", "asc"));
     const unsub = onSnapshot(q, snap => {
       setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, [id]);
+  }, [id, user?.uid]);
 
   const submitComment = async () => {
     if (!commentText.trim()) return;
@@ -148,6 +156,35 @@ export default function PostDetail() {
     }
 
     setCommentText(""); setLoading(false);
+  };
+
+  const handleLike = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    const ref = doc(db, "posts", id);
+
+    if (isLiked) {
+      await updateDoc(ref, { likes: arrayRemove(user.uid) });
+      setLikeCount(c => c - 1);
+    } else {
+      await updateDoc(ref, { likes: arrayUnion(user.uid) });
+      setLikeCount(c => c + 1);
+
+      // 🟢 TAMBAHAN FITUR NOTIFIKASI LIKE (logic identik dengan PostCard.jsx)
+      // Notifikasi hanya dikirim jika yang me-like adalah orang lain (bukan pemilik postingan itu sendiri)
+      if (post.authorId && post.authorId !== user.uid) {
+        await addDoc(collection(db, "notifications"), {
+          toUid: post.authorId,
+          fromUid: user.uid,
+          fromName: user.displayName || user.email || "Seseorang",
+          type: "like",
+          postId: id,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
+    }
+    setIsLiked(!isLiked);
   };
 
   if (!post) return <div className="spinner" />;
@@ -183,6 +220,25 @@ export default function PostDetail() {
             {post.gadgetTag}
           </Link>
         )}
+
+        <button
+          onClick={handleLike}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            marginTop: "14px",
+            background: "none",
+            border: "none",
+            cursor: user ? "pointer" : "default",
+            color: isLiked ? "#ef4444" : "var(--text2)",
+            fontSize: "13px",
+            padding: 0
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span>{likeCount}</span>
+        </button>
       </div>
 
       <hr className="divider" />
