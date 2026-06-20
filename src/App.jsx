@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import Leaderboard from "./pages/Leaderboard";
 import News from "./pages/News";
 import NewsDetail from "./pages/NewsDetail"; 
+import AdminChat from "./pages/AdminChat";
 import "./index.css";
 
 function ProtectedRoute({ children }) {
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/profile/:uid" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/admin/chats" element={<ProtectedRoute><AdminChat /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

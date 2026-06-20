@@ -3,17 +3,19 @@ import { collection, query, orderBy, onSnapshot, limit } from "firebase/firestor
 import { db } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import ChatWidget from "../components/ChatWidget";
 
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [topGadgets, setTopGadgets] = useState([]);
-  const [articles, setArticles] = useState([]); // State untuk menampung berita
+  const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("trending");
 
-  // Fetch Post Diskusi
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   useEffect(() => {
     const postsRef = collection(db, "posts");
     let q = query(postsRef, orderBy("createdAt", "desc"));
@@ -32,7 +34,6 @@ export default function Home() {
     return unsub;
   }, [activeTab]);
 
-  // Fetch Peringkat Gadget Top 5
   useEffect(() => {
     const gadgetRef = collection(db, "gadgets");
     const q = query(gadgetRef, orderBy("scoreGlobal", "desc"), limit(5));
@@ -42,16 +43,14 @@ export default function Home() {
     return unsub;
   }, []);
 
-  // Fetch Berita Gadget Terbaru (Limit 3 atau 4 untuk ditaruh di home)
   useEffect(() => {
-    const articlesRef = collection(db, "articles"); // Koleksi firestore baru
+    const articlesRef = collection(db, "articles");
     const q = query(articlesRef, orderBy("publishedAt", "desc"), limit(3));
     
     const unsub = onSnapshot(articlesRef, (snap) => {
       if (!snap.empty) {
         setArticles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       } else {
-        // Mock data otomatis jika koleksi 'articles' di Firestore kamu masih kosong
         setArticles([
           {
             id: "news-1",
@@ -83,26 +82,51 @@ export default function Home() {
     return unsub;
   }, []);
 
+  // Mempersiapkan item cadangan (mock data) seandainya Firestore kosong / belum ke-load sempurna
+  const carouselItems = topGadgets.length > 0 ? topGadgets : [
+    {
+      name: "iPhone 15 Pro Max",
+      brand: "Apple",
+      imageUrl: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=60",
+      scoreGlobal: 154,
+    },
+    {
+      name: "Galaxy S24 Ultra",
+      brand: "Samsung",
+      imageUrl: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&auto=format&fit=crop&q=60",
+      scoreGlobal: 152,
+    },
+    {
+      name: "Xiaomi 14 Ultra",
+      brand: "Xiaomi",
+      imageUrl: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&auto=format&fit=crop&q=60",
+      scoreGlobal: 150,
+    }
+  ];
+
+  // Logika interval diperbaiki agar mengacu pada panjang total item array yang tersedia
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [carouselItems.length]);
+
   if (loading) return <div className="spinner" />;
 
-  const featuredGadget = topGadgets[0] || {
-    name: "iPhone 15 Pro Max",
-    brand: "Apple",
-    imageUrl: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=60",
-    scoreGlobal: 154,
-  };
+  const featuredGadget = carouselItems[currentSlide] || carouselItems[0];
 
   const gadgetCaption = featuredGadget.caption || 
-    `${featuredGadget.name} merupakan perangkat flagship andalan dari ${featuredGadget.brand} dengan total skor pengujian performa menyeluruh sebesar ${featuredGadget.scoreGlobal} poin.`;
+    `${featuredGadget.name} merupakan perangkat flagship andalan dari ${featuredGadget.brand || 'Brand'} dengan total skor pengujian performa menyeluruh sebesar ${featuredGadget.scoreGlobal || 0} poin.`;
 
   return (
     <div style={{ width: "100%", padding: "20px 30px", color: "#fff", boxSizing: "border-box" }}>
       
-      {/* HERO BANNER */}
+      {/* Dynamic Auto-Carousel Hero Section */}
       <div style={{
         background: "linear-gradient(135deg, #111112 0%, #1c1c1f 100%)",
         borderRadius: "16px",
-        padding: "45px",
+        padding: "45px 45px 55px 45px",
         marginBottom: "35px",
         border: "1px solid #2d2d30",
         display: "flex",
@@ -116,36 +140,38 @@ export default function Home() {
       }}>
         <div style={{ position: "absolute", top: "-20%", right: "-5%", width: "450px", height: "450px", background: "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
 
+        {/* Konten Kiri (Informasi Gadget) */}
         <div style={{ flex: "1", minWidth: "320px", zIndex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
             <span style={{ backgroundColor: "#22c55e", color: "#fff", padding: "5px 14px", borderRadius: "30px", fontSize: "11px", fontWeight: "800", letterSpacing: "0.5px" }}>
-              🏆 SKOR TERTINGGI: {featuredGadget.scoreGlobal} PTS
+              🏆 SKOR TERTINGGI: {featuredGadget.scoreGlobal || 0} PTS
             </span>
             <span style={{ backgroundColor: "#252529", color: "#3b82f6", padding: "4px 12px", borderRadius: "30px", fontSize: "11px", fontWeight: "700", border: "1px solid rgba(59, 130, 246, 0.4)" }}>
-              {featuredGadget.brand?.toUpperCase()} FLAGSHIP CHOICE
+              {String(featuredGadget.brand || "FLAGSHIP").toUpperCase()} CHOICE
             </span>
           </div>
           
-          <h1 style={{ fontSize: "42px", fontWeight: "900", marginBottom: "16px", letterSpacing: "-0.5px", lineHeight: "1.2" }}>
+          {/* Key dipasang di teks h1 & p agar memicu re-render efek transisi pudar saat slide berganti */}
+          <h1 key={`title-${currentSlide}`} style={{ fontSize: "42px", fontWeight: "900", marginBottom: "16px", letterSpacing: "-0.5px", lineHeight: "1.2", animation: "fadeIn 0.5s ease-in-out" }}>
             {featuredGadget.name}
           </h1>
           
-          <p style={{ color: "#b3b3b3", fontSize: "15px", lineHeight: "1.7", marginBottom: "30px", maxWidth: "680px" }}>
+          <p key={`desc-${currentSlide}`} style={{ color: "#b3b3b3", fontSize: "15px", lineHeight: "1.7", marginBottom: "30px", maxWidth: "680px", minHeight: "50px", animation: "fadeIn 0.5s ease-in-out" }}>
             {gadgetCaption}
           </p>
 
           <div style={{ display: "flex", gap: "14px", marginBottom: "35px", flexWrap: "wrap" }}>
             <div style={{ backgroundColor: "#141416", border: "1px solid #2d2d30", padding: "12px 18px", borderRadius: "10px" }}>
               <span style={{ display: "block", fontSize: "10px", color: "#8e8e93", fontWeight: "700" }}>CAMERA</span>
-              <span style={{ fontSize: "13px", color: "#eee", fontWeight: "600" }}>Pro-Grade Sensor</span>
+              <span style={{ fontSize: "13px", color: "#eee", fontWeight: "600" }}>{featuredGadget.cameraFeature || "Pro-Grade Sensor"}</span>
             </div>
             <div style={{ backgroundColor: "#141416", border: "1px solid #2d2d30", padding: "12px 18px", borderRadius: "10px" }}>
               <span style={{ display: "block", fontSize: "10px", color: "#8e8e93", fontWeight: "700" }}>PERFORMANCE</span>
-              <span style={{ fontSize: "13px", color: "#eee", fontWeight: "600" }}>Ultimate Gaming</span>
+              <span style={{ fontSize: "13px", color: "#eee", fontWeight: "600" }}>{featuredGadget.performanceFeature || "Ultimate Gaming"}</span>
             </div>
             <div style={{ backgroundColor: "#141416", border: "1px solid #2d2d30", padding: "12px 18px", borderRadius: "10px" }}>
               <span style={{ display: "block", fontSize: "10px", color: "#8e8e93", fontWeight: "700" }}>BATTERY</span>
-              <span style={{ fontSize: "13px", color: "#eee", fontWeight: "600" }}>Long-Lasting Life</span>
+              <span style={{ fontSize: "13px", color: "#eee", fontWeight: "600" }}>{featuredGadget.batteryFeature || "Long-Lasting Life"}</span>
             </div>
           </div>
 
@@ -155,31 +181,107 @@ export default function Home() {
           </Link>
         </div>
 
-        <div style={{ flex: "0 1 380px", display: "flex", justifyContent: "center", alignItems: "center", padding: "25px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.04)", height: "260px" }}>
-          <img src={featuredGadget.imageUrl} alt={featuredGadget.name} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", filter: "drop-shadow(0 15px 25px rgba(0,0,0,0.55))" }} />
+        {/* Konten Kanan (Gambar) */}
+        <div style={{ flex: "0 1 380px", display: "flex", justifyContent: "center", alignItems: "center", padding: "25px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.04)", height: "260px", zIndex: 1 }}>
+          <img 
+            key={`img-${currentSlide}`}
+            src={featuredGadget.imageUrl} 
+            alt={featuredGadget.name} 
+            style={{ 
+              maxHeight: "100%", 
+              maxWidth: "100%", 
+              objectFit: "contain", 
+              filter: "drop-shadow(0 15px 25px rgba(0,0,0,0.55))",
+              animation: "fadeIn 0.5s ease-in-out"
+            }} 
+          />
         </div>
+
+        {/* Indikator Titik Bawah */}
+        {carouselItems.length > 1 && (
+          <div style={{ position: "absolute", bottom: "20px", left: "45px", display: "flex", gap: "8px", zIndex: 2 }}>
+            {carouselItems.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentSlide(idx)}
+                style={{
+                  width: idx === currentSlide ? "24px" : "8px",
+                  height: "8px",
+                  borderRadius: "4px",
+                  backgroundColor: idx === currentSlide ? "#3b82f6" : "#4b5563",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  transition: "all 0.3s ease"
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+          }
+        `}</style>
       </div>
 
-      {/* LAYOUT GRID UTAMA BARIS BAWAH */}
+      {/* Grid Kolom Utama, Diskusi, Berita, & Sidebar */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "30px", alignItems: "start" }}>
         
-        {/* KOLOM KIRI (DISKUSI & BERITA) */}
         <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
           
-          {/* SECTION DISKUSI */}
           <div>
-            {/* KOTAK BUAT POSTINGAN */}
             <div 
               onClick={() => navigate("/compose")}
-              style={{ backgroundColor: "#1e1e1e", padding: "16px", borderRadius: "8px", border: "1px solid #333", marginBottom: "24px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              style={{ 
+                backgroundColor: "#1e1e24", 
+                padding: "20px", 
+                borderRadius: "14px", 
+                border: "1px solid #2d2d30", 
+                marginBottom: "24px", 
+                cursor: "pointer", 
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                transition: "border-color 0.2s"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "#3b82f6"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "#2d2d30"}
             >
-              <img src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || 'Sultan'}&background=random`} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} />
-              <div style={{ flex: 1, backgroundColor: "#252526", padding: "11px 16px", borderRadius: "25px", color: "#8e8e93", fontSize: "14px", border: "1px solid #3c3c3e" }}>
-                Apa yang Anda pikirkan, {user?.displayName ? user.displayName.split(" ")[0] : "Sultan"}?
+              <div style={{ 
+                fontSize: "14px", 
+                fontWeight: "700", 
+                color: "#fff", 
+                marginBottom: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}>
+                <span style={{ color: "#3b82f6" }}></span> Mulai Diskusi Baru
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <img src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || 'Sultan'}&background=random`} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #3c3c3e" }} />
+                <div style={{ 
+                  flex: 1, 
+                  backgroundColor: "#141416", 
+                  padding: "12px 16px", 
+                  borderRadius: "10px", 
+                  color: "#8e8e93", 
+                  fontSize: "14px", 
+                  border: "1px solid #2d2d30",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
+                  <span>Apa tren gadget yang sedang Anda pikirkan, {user?.displayName ? user.displayName.split(" ")[0] : "Sultan"}?</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </div>
               </div>
             </div>
 
-            {/* FILTER TAB DISKUSI */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid #333", paddingBottom: "10px" }}>
               <h3 style={{ fontSize: "18px", fontWeight: "700" }}>Diskusi Terhangat</h3>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -188,7 +290,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* LIST DISKUSI COMPONENT */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {posts.length === 0 ? (
                 <div style={{ padding: "40px 20px", textAlign: "center", backgroundColor: "#1e1e1e", borderRadius: "8px", border: "1px solid #333", color: "#aaa" }}>
@@ -221,7 +322,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* NEW SECTION: BERITA SEPUTAR GADGET (DIBAWAH MENU DISKUSI) */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid #333", paddingBottom: "10px" }}>
               <h3 style={{ fontSize: "18px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -230,7 +330,6 @@ export default function Home() {
               <Link to="/news" style={{ color: "#3b82f6", textDecoration: "none", fontSize: "13px", fontWeight: "600" }}>Lihat Semua Berita →</Link>
             </div>
 
-            {/* Grid Berita Berdampingan */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
               {articles.map((article) => (
                 <div 
@@ -253,12 +352,10 @@ export default function Home() {
                     e.currentTarget.style.borderColor = "#2d2d30";
                   }}
                 >
-                  {/* Foto Sampul Berita */}
                   <div style={{ width: "100%", height: "140px", overflow: "hidden", backgroundColor: "#141416" }}>
                     <img src={article.imageUrl} alt={article.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   
-                  {/* Detail Konten Singkat */}
                   <div style={{ padding: "16px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                       <span style={{ 
@@ -286,9 +383,7 @@ export default function Home() {
 
         </div>
 
-        {/* KOLOM KANAN (SIDEBAR) */}
         <aside style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* TOP SKOR GLOBAL */}
           <div style={{ backgroundColor: "#1e1e1e", padding: "20px", borderRadius: "8px", border: "1px solid #333" }}>
             <h4 style={{ margin: "0 0 4px 0", fontSize: "15px", fontWeight: "700" }}>🏆 Top Skor Global</h4>
             <p style={{ margin: "0 0 16px 0", fontSize: "12px", color: "#8e8e93" }}>Peringkat performa menyeluruh</p>
@@ -303,12 +398,11 @@ export default function Home() {
                 </div>
               ))}
               <div style={{ textAlign: "center", marginTop: "8px" }}>
-                <Link to="/ranking" style={{ textDecoration: "none", color: "#3b82f6", fontSize: "13px", fontWeight: "600" }}>Lihat Semua Peringkat →</Link>
+                <Link to="/leaderboard" style={{ textDecoration: "none", color: "#3b82f6", fontSize: "13px", fontWeight: "600" }}>Lihat Semua Peringkat →</Link>
               </div>
             </div>
           </div>
 
-          {/* TELUSURI BRAND */}
           <div style={{ backgroundColor: "#1e1e1e", padding: "20px", borderRadius: "8px", border: "1px solid #333" }}>
             <h4 style={{ margin: "0 0 16px 0", fontSize: "15px", fontWeight: "700" }}>🏷️ Telusuri Brand</h4>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -322,6 +416,7 @@ export default function Home() {
         </aside>
 
       </div>
+      <ChatWidget />
     </div>
   );
 }

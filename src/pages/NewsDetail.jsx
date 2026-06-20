@@ -28,4 +28,4 @@ export default function NewsDetail() {
       {/* Nanti di sini kamu bisa tambah logika fetch data berita dari Firestore berdasarkan ID */}
     </div>
   );
-}
+}   
