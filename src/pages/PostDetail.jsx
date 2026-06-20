@@ -118,8 +118,8 @@ export default function PostDetail() {
       if (d.exists()) {
         const data = { id: d.id, ...d.data() };
         setPost(data);
-        setLikeCount(data.likes?.length || 0);
-        setIsLiked(data.likes?.includes(user?.uid));
+        setLikeCount(data.likesCount || 0);
+        setIsLiked(data.likes?.includes(user?.uid) || false);
       }
     });
     const q = query(collection(db, "posts", id, "comments"), orderBy("createdAt", "asc"));
@@ -139,13 +139,13 @@ export default function PostDetail() {
       authorPhoto: user.photoURL || "",
       createdAt: serverTimestamp()
     });
-    await updateDoc(doc(db, "posts", id), { commentCount: increment(1) });
+    await updateDoc(doc(db, "posts", id), { commentsCount: increment(1) });
 
     // 🟢 TAMBAHAN 2: Kirim notifikasi KOMENTAR BARU (Comment)
     // Notifikasi hanya dikirim jika yang berkomentar adalah orang lain (bukan pemilik postingan itu sendiri)
-    if (post && post.authorId && post.authorId !== user.uid) {
+    if (post && post.userId && post.userId !== user.uid) {
       await addDoc(collection(db, "notifications"), {
-        toUid: post.authorId,                                    // ID Pemilik postingan asli
+        toUid: post.userId,                                      // ID Pemilik postingan asli
         fromUid: user.uid,                                       // ID Kamu yang ngasih komentar
         fromName: user.displayName || user.email || "Seseorang", // Nama kamu
         type: "comment",                                         // Tipe komentar
@@ -164,17 +164,17 @@ export default function PostDetail() {
     const ref = doc(db, "posts", id);
 
     if (isLiked) {
-      await updateDoc(ref, { likes: arrayRemove(user.uid) });
+      await updateDoc(ref, { likes: arrayRemove(user.uid), likesCount: increment(-1) });
       setLikeCount(c => c - 1);
     } else {
-      await updateDoc(ref, { likes: arrayUnion(user.uid) });
+      await updateDoc(ref, { likes: arrayUnion(user.uid), likesCount: increment(1) });
       setLikeCount(c => c + 1);
 
       // 🟢 TAMBAHAN FITUR NOTIFIKASI LIKE (logic identik dengan PostCard.jsx)
       // Notifikasi hanya dikirim jika yang me-like adalah orang lain (bukan pemilik postingan itu sendiri)
-      if (post.authorId && post.authorId !== user.uid) {
+      if (post.userId && post.userId !== user.uid) {
         await addDoc(collection(db, "notifications"), {
-          toUid: post.authorId,
+          toUid: post.userId,
           fromUid: user.uid,
           fromName: user.displayName || user.email || "Seseorang",
           type: "like",
@@ -199,18 +199,18 @@ export default function PostDetail() {
       <div className={styles.postWrap}>
         <div className={styles.postHeader}>
           <img
-            src={post.authorPhoto || `https://ui-avatars.com/api/?name=${post.authorName}&background=3b82f6&color=fff`}
-            className="avatar" alt={post.authorName}
+            src={post.userPhoto || `https://ui-avatars.com/api/?name=${post.userName}&background=3b82f6&color=fff`}
+            className="avatar" alt={post.userName}
           />
           <div>
-            <Link to={`/profile/${post.authorId}`} className={styles.postAuthor}>{post.authorName}</Link>
+            <Link to={`/profile/${post.userId}`} className={styles.postAuthor}>{post.userName}</Link>
             <p className={styles.postTime}>
               {post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleString("id-ID") : ""}
             </p>
           </div>
         </div>
 
-        <p className={styles.postText}>{renderText(post.text)}</p>
+        <p className={styles.postText}>{renderText(post.content)}</p>
 
         {post.imageUrl && <img src={post.imageUrl} className={styles.postImg} alt="post" />}
 

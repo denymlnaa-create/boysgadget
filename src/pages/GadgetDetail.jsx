@@ -1,32 +1,87 @@
 import { useState, useEffect } from "react";
-import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { useParams, useNavigate } from "react-router-dom";
+import { collection, query, where, orderBy, onSnapshot, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import PostCard from "../components/PostCard";
 import styles from "./GadgetDetail.module.css";
 
+const SPEC_SECTIONS = [
+  {
+    title: "Layar",
+    fields: [
+      { key: "displaySize", label: "Ukuran Layar" },
+      { key: "displayType", label: "Tipe Layar" },
+      { key: "displayRefreshRate", label: "Refresh Rate" },
+      { key: "displayResolution", label: "Resolusi" }
+    ]
+  },
+  {
+    title: "Performa",
+    fields: [
+      { key: "chipset", label: "Chipset" },
+      { key: "ram", label: "RAM" },
+      { key: "storage", label: "Storage" }
+    ]
+  },
+  {
+    title: "Kamera",
+    fields: [
+      { key: "cameraRear", label: "Kamera Belakang" },
+      { key: "cameraFront", label: "Kamera Depan" }
+    ]
+  },
+  {
+    title: "Baterai",
+    fields: [
+      { key: "batteryCapacity", label: "Kapasitas Baterai" },
+      { key: "batteryCharging", label: "Fast Charging" }
+    ]
+  },
+  {
+    title: "Bodi",
+    fields: [
+      { key: "bodyDimensions", label: "Dimensi" },
+      { key: "bodyWeight", label: "Berat" },
+      { key: "bodyColors", label: "Pilihan Warna" }
+    ]
+  },
+  {
+    title: "Konektivitas",
+    fields: [
+      { key: "connNetwork", label: "Jaringan" },
+      { key: "connNFC", label: "NFC" },
+      { key: "connPort", label: "Port" }
+    ]
+  }
+];
+
 export default function GadgetDetail() {
   const { name } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
-  const [specs, setSpecs] = useState(null);
+  const [gadget, setGadget] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("specs");
 
-  const slug = location.state?.slug;
-
   useEffect(() => {
-    const fetchSpecs = async () => {
-      if (!slug) { setLoading(false); return; }
+    const fetchGadget = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`https://phone-specs-api.azharimm.dev/specs?slug=${slug}`);
-        const data = await res.json();
-        setSpecs(data.data);
-      } catch { }
+        const decodedName = decodeURIComponent(name);
+        const q = query(collection(db, "gadgets"), where("name", "==", decodedName));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setGadget({ id: snap.docs[0].id, ...snap.docs[0].data() });
+        } else {
+          setGadget(null);
+        }
+      } catch (err) {
+        console.error("Gagal memuat data gadget:", err);
+        setGadget(null);
+      }
       setLoading(false);
     };
-    fetchSpecs();
+    fetchGadget();
 
     const q = query(
       collection(db, "posts"),
@@ -37,7 +92,17 @@ export default function GadgetDetail() {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, [name, slug]);
+  }, [name]);
+
+  // Hanya tampilkan section yang punya minimal satu field terisi
+  const filledSections = SPEC_SECTIONS
+    .map(section => ({
+      title: section.title,
+      rows: section.fields
+        .filter(f => gadget && gadget[f.key])
+        .map(f => ({ key: f.label, val: gadget[f.key] }))
+    }))
+    .filter(section => section.rows.length > 0);
 
   return (
     <div style={{maxWidth:600,margin:"0 auto"}}>
@@ -48,16 +113,15 @@ export default function GadgetDetail() {
         <h1 style={{fontSize:18,fontWeight:700}}>{decodeURIComponent(name)}</h1>
       </div>
 
-      {specs && (
+      {gadget && (
         <div className={styles.heroWrap}>
-          {specs.thumbnail && <img src={specs.thumbnail} className={styles.heroImg} alt={specs.phone_name} />}
+          {gadget.imageUrl && <img src={gadget.imageUrl} className={styles.heroImg} alt={gadget.name} />}
           <div className={styles.heroInfo}>
-            <p className={styles.heroName}>{specs.phone_name}</p>
-            {specs.release_date && <p className={styles.heroSub}>Rilis: {specs.release_date}</p>}
-            
-            {/* 🟢 FITUR TAMBAHAN: Tombol Tanya Admin Spesifik sesuai HP yang sedang dilihat */}
+            <p className={styles.heroName}>{gadget.name}</p>
+            {gadget.brand && <p className={styles.heroSub}>Brand: {gadget.brand}</p>}
+
             <a 
-              href={`https://wa.me/6281234567890?text=Halo%20Admin%20BoysGadget,%20saya%20mau%20tanya%20dan%20konsultasi%20mengenai%20HP%20${encodeURIComponent(specs.phone_name)}`}
+              href={`https://wa.me/6281234567890?text=Halo%20Admin%20BoysGadget,%20saya%20mau%20tanya%20dan%20konsultasi%20mengenai%20HP%20${encodeURIComponent(gadget.name)}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -82,7 +146,6 @@ export default function GadgetDetail() {
         </div>
       )}
 
-      {/* 💡 TIPS TAMBAHAN: Panduan singkat membaca data spesifikasi */}
       <div style={{padding:"0 16px", marginBottom: 12}}>
         <div style={{background:"var(--bg2, rgba(255,255,255,0.03))", borderRadius: 8, padding: 12, border: "1px solid var(--border, rgba(255,255,255,0.05))"}}>
           <p style={{fontSize:12, color:"var(--text2, #aaa)", margin:0, lineHeight: "1.5"}}>
@@ -98,15 +161,15 @@ export default function GadgetDetail() {
 
       {tab === "specs" && (
         loading ? <div className="spinner" /> :
-        !specs ? <p style={{color:"var(--text2)",fontSize:14,padding:"30px 20px",textAlign:"center"}}>Data spesifikasi tidak tersedia.</p> :
+        !gadget || filledSections.length === 0 ? <p style={{color:"var(--text2)",fontSize:14,padding:"30px 20px",textAlign:"center"}}>Data spesifikasi tidak tersedia.</p> :
         <div className={styles.specsTable}>
-          {specs.specifications?.map((section, i) => (
+          {filledSections.map((section, i) => (
             <div key={i} className={styles.specSection}>
               <h3 className={styles.specTitle}>{section.title}</h3>
-              {section.specs?.map((row, j) => (
+              {section.rows.map((row, j) => (
                 <div key={j} className={styles.specRow}>
                   <span className={styles.specKey}>{row.key}</span>
-                  <span className={styles.specVal}>{Array.isArray(row.val) ? row.val.join(", ") : row.val}</span>
+                  <span className={styles.specVal}>{row.val}</span>
                 </div>
               ))}
             </div>
