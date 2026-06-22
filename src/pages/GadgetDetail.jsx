@@ -1,56 +1,53 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, query, where, orderBy, onSnapshot, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import PostCard from "../components/PostCard";
 import styles from "./GadgetDetail.module.css";
 
-const SPEC_SECTIONS = [
+const MOBILEAPI_KEY = "eef7bb1143bf377e91b7622abecfb1ab51dcc751";
+
+// Mapping field MobileAPI.dev → label tampilan
+// Response: { name, brand_name, colors, storage, screen_resolution, weight,
+//             thickness, release_date, camera, battery_capacity, hardware }
+const SPEC_MAP = [
   {
     title: "Layar",
-    fields: [
-      { key: "displaySize", label: "Ukuran Layar" },
-      { key: "displayType", label: "Tipe Layar" },
-      { key: "displayRefreshRate", label: "Refresh Rate" },
-      { key: "displayResolution", label: "Resolusi" }
+    rows: [
+      { key: "screen_resolution", label: "Resolusi & Ukuran" }
     ]
   },
   {
     title: "Performa",
-    fields: [
-      { key: "chipset", label: "Chipset" },
-      { key: "ram", label: "RAM" },
+    rows: [
+      { key: "hardware", label: "Chipset & RAM" },
       { key: "storage", label: "Storage" }
     ]
   },
   {
     title: "Kamera",
-    fields: [
-      { key: "cameraRear", label: "Kamera Belakang" },
-      { key: "cameraFront", label: "Kamera Depan" }
+    rows: [
+      { key: "camera", label: "Kamera" }
     ]
   },
   {
     title: "Baterai",
-    fields: [
-      { key: "batteryCapacity", label: "Kapasitas Baterai" },
-      { key: "batteryCharging", label: "Fast Charging" }
+    rows: [
+      { key: "battery_capacity", label: "Kapasitas Baterai" }
     ]
   },
   {
     title: "Bodi",
-    fields: [
-      { key: "bodyDimensions", label: "Dimensi" },
-      { key: "bodyWeight", label: "Berat" },
-      { key: "bodyColors", label: "Pilihan Warna" }
+    rows: [
+      { key: "weight", label: "Berat" },
+      { key: "thickness", label: "Ketebalan" },
+      { key: "colors", label: "Pilihan Warna" }
     ]
   },
   {
-    title: "Konektivitas",
-    fields: [
-      { key: "connNetwork", label: "Jaringan" },
-      { key: "connNFC", label: "NFC" },
-      { key: "connPort", label: "Port" }
+    title: "Rilis",
+    rows: [
+      { key: "release_date", label: "Tanggal Rilis" }
     ]
   }
 ];
@@ -59,29 +56,61 @@ export default function GadgetDetail() {
   const { name } = useParams();
   const navigate = useNavigate();
   const [gadget, setGadget] = useState(null);
+  const [apiSpecs, setApiSpecs] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("specs");
 
   useEffect(() => {
-    const fetchGadget = async () => {
+    const fetchData = async () => {
       setLoading(true);
+      const decodedName = decodeURIComponent(name);
+
       try {
-        const decodedName = decodeURIComponent(name);
+        // 1. Ambil dokumen gadget dari Firestore (untuk skor + cek cache spesifikasi)
         const q = query(collection(db, "gadgets"), where("name", "==", decodedName));
         const snap = await getDocs(q);
+        let gadgetDoc = null;
+        let gadgetId = null;
+
         if (!snap.empty) {
-          setGadget({ id: snap.docs[0].id, ...snap.docs[0].data() });
+          gadgetDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          gadgetId = snap.docs[0].id;
+          setGadget(gadgetDoc);
+        }
+
+        // 2. Cek apakah spesifikasi sudah pernah di-cache di Firestore
+        if (gadgetDoc?.apiSpecsCache) {
+          // Sudah ada cache → pakai langsung, tanpa call API
+          setApiSpecs(gadgetDoc.apiSpecsCache);
         } else {
-          setGadget(null);
+          // Belum ada cache → fetch dari MobileAPI.dev
+          const res = await fetch(
+            `/mobileapi/devices/search?name=${encodeURIComponent(decodedName)}&key=${MOBILEAPI_KEY}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            // Response bisa berupa object langsung atau array — handle keduanya
+            const specs = Array.isArray(data) ? data[0] : data;
+            if (specs && specs.name) {
+              setApiSpecs(specs);
+              // Simpan ke Firestore sebagai cache supaya tidak call API lagi
+              if (gadgetId) {
+                await updateDoc(doc(db, "gadgets", gadgetId), {
+                  apiSpecsCache: specs
+                });
+              }
+            }
+          }
         }
       } catch (err) {
         console.error("Gagal memuat data gadget:", err);
-        setGadget(null);
       }
+
       setLoading(false);
     };
-    fetchGadget();
+
+    fetchData();
 
     const q = query(
       collection(db, "posts"),
@@ -94,15 +123,61 @@ export default function GadgetDetail() {
     return unsub;
   }, [name]);
 
-  // Hanya tampilkan section yang punya minimal satu field terisi
-  const filledSections = SPEC_SECTIONS
+  // Bangun section spesifikasi dari data API — hanya tampilkan yang ada nilainya
+  const filledSections = SPEC_MAP
+    .map(section => ({
+      title: section.title,
+      rows: section.rows
+        .filter(row => apiSpecs?.[row.key])
+        .map(row => ({ key: row.label, val: apiSpecs[row.key] }))
+    }))
+    .filter(section => section.rows.length > 0);
+
+  // Spesifikasi manual dari Firestore (field yang diisi admin) sebagai fallback/tambahan
+  const MANUAL_SPEC_SECTIONS = [
+    { title: "Layar", fields: [
+      { key: "displaySize", label: "Ukuran Layar" },
+      { key: "displayType", label: "Tipe Layar" },
+      { key: "displayRefreshRate", label: "Refresh Rate" },
+      { key: "displayResolution", label: "Resolusi" }
+    ]},
+    { title: "Performa", fields: [
+      { key: "chipset", label: "Chipset" },
+      { key: "ram", label: "RAM" },
+      { key: "storage", label: "Storage" }
+    ]},
+    { title: "Kamera", fields: [
+      { key: "cameraRear", label: "Kamera Belakang" },
+      { key: "cameraFront", label: "Kamera Depan" }
+    ]},
+    { title: "Baterai", fields: [
+      { key: "batteryCapacity", label: "Kapasitas Baterai" },
+      { key: "batteryCharging", label: "Fast Charging" }
+    ]},
+    { title: "Bodi", fields: [
+      { key: "bodyDimensions", label: "Dimensi" },
+      { key: "bodyWeight", label: "Berat" },
+      { key: "bodyColors", label: "Pilihan Warna" }
+    ]},
+    { title: "Konektivitas", fields: [
+      { key: "connNetwork", label: "Jaringan" },
+      { key: "connNFC", label: "NFC" },
+      { key: "connPort", label: "Port" }
+    ]}
+  ];
+
+  const manualSections = MANUAL_SPEC_SECTIONS
     .map(section => ({
       title: section.title,
       rows: section.fields
-        .filter(f => gadget && gadget[f.key])
+        .filter(f => gadget?.[f.key])
         .map(f => ({ key: f.label, val: gadget[f.key] }))
     }))
     .filter(section => section.rows.length > 0);
+
+  // Gabungkan: prioritaskan API, fallback ke manual Firestore
+  const specsToShow = filledSections.length > 0 ? filledSections : manualSections;
+  const hasSpecs = specsToShow.length > 0;
 
   return (
     <div style={{maxWidth:600,margin:"0 auto"}}>
@@ -113,15 +188,26 @@ export default function GadgetDetail() {
         <h1 style={{fontSize:18,fontWeight:700}}>{decodeURIComponent(name)}</h1>
       </div>
 
-      {gadget && (
+      {(gadget || apiSpecs) && (
         <div className={styles.heroWrap}>
-          {gadget.imageUrl && <img src={gadget.imageUrl} className={styles.heroImg} alt={gadget.name} />}
+          {(gadget?.imageUrl || apiSpecs?.image) && (
+            <img
+              src={gadget?.imageUrl || apiSpecs?.image || null}
+              className={styles.heroImg}
+              alt={decodeURIComponent(name)}
+            />
+          )}
           <div className={styles.heroInfo}>
-            <p className={styles.heroName}>{gadget.name}</p>
-            {gadget.brand && <p className={styles.heroSub}>Brand: {gadget.brand}</p>}
+            <p className={styles.heroName}>{apiSpecs?.name || gadget?.name || decodeURIComponent(name)}</p>
+            {(apiSpecs?.brand_name || gadget?.brand) && (
+              <p className={styles.heroSub}>Brand: {apiSpecs?.brand_name || gadget?.brand}</p>
+            )}
+            {apiSpecs?.release_date && (
+              <p className={styles.heroSub}>{apiSpecs.release_date}</p>
+            )}
 
-            <a 
-              href={`https://wa.me/6281234567890?text=Halo%20Admin%20BoysGadget,%20saya%20mau%20tanya%20dan%20konsultasi%20mengenai%20HP%20${encodeURIComponent(gadget.name)}`}
+            <a
+              href={`https://wa.me/6281234567890?text=Halo%20Admin%20BoysGadget,%20saya%20mau%20tanya%20dan%20konsultasi%20mengenai%20HP%20${encodeURIComponent(apiSpecs?.name || decodeURIComponent(name))}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -161,20 +247,25 @@ export default function GadgetDetail() {
 
       {tab === "specs" && (
         loading ? <div className="spinner" /> :
-        !gadget || filledSections.length === 0 ? <p style={{color:"var(--text2)",fontSize:14,padding:"30px 20px",textAlign:"center"}}>Data spesifikasi tidak tersedia.</p> :
-        <div className={styles.specsTable}>
-          {filledSections.map((section, i) => (
-            <div key={i} className={styles.specSection}>
-              <h3 className={styles.specTitle}>{section.title}</h3>
-              {section.rows.map((row, j) => (
-                <div key={j} className={styles.specRow}>
-                  <span className={styles.specKey}>{row.key}</span>
-                  <span className={styles.specVal}>{row.val}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+        !hasSpecs ? (
+          <p style={{color:"var(--text2)",fontSize:14,padding:"30px 20px",textAlign:"center"}}>
+            Data spesifikasi tidak tersedia.
+          </p>
+        ) : (
+          <div className={styles.specsTable}>
+            {specsToShow.map((section, i) => (
+              <div key={i} className={styles.specSection}>
+                <h3 className={styles.specTitle}>{section.title}</h3>
+                {section.rows.map((row, j) => (
+                  <div key={j} className={styles.specRow}>
+                    <span className={styles.specKey}>{row.key}</span>
+                    <span className={styles.specVal}>{row.val}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )
       )}
 
       {tab === "posts" && (

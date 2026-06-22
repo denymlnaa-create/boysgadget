@@ -1,7 +1,34 @@
-    import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { useNavigate } from "react-router-dom";
+
+const FALLBACK_ARTICLES = [
+  {
+    id: "news-1",
+    title: "Bocoran Desain Terbaru Lini Flagship Generasi Mendatang, Bezel Kian Tipis!",
+    category: "Rumor",
+    imageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&auto=format&fit=crop&q=60",
+    publishedAt: "10 Jun 2026",
+    excerpt: "Informasi internal pemasok layar mengonfirmasi adanya pemangkasan ketebalan bezel hingga 1.2mm menggunakan teknologi fabrikasi teranyar..."
+  },
+  {
+    id: "news-2",
+    title: "Chipset Fabrikasi 3nm Generasi Kedua Mulai Masuki Tahap Produksi Massal",
+    category: "Teknologi",
+    imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&auto=format&fit=crop&q=60",
+    publishedAt: "09 Jun 2026",
+    excerpt: "Fabrikasi chipset terbaru ini dijanjikan bakal membawa efisiensi daya hingga 25% jauh lebih hemat dibandingkan pendahulunya..."
+  },
+  {
+    id: "news-3",
+    title: "Resmi Meluncur! Sensor Kamera HP 200MP Kini Dibekali AI Tracking Lebih Akurat",
+    category: "Rilis",
+    imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=500&auto=format&fit=crop&q=60",
+    publishedAt: "08 Jun 2026",
+    excerpt: "Kemampuan computational photography terupdate memungkinkan pengambilan gambar low-light instan tanpa adanya delay rana kamera."
+  }
+];
 
 export default function News() {
   const navigate = useNavigate();
@@ -10,16 +37,12 @@ export default function News() {
   useEffect(() => {
     const articlesRef = collection(db, "articles");
     const q = query(articlesRef, orderBy("publishedAt", "desc"));
-    
-    const unsub = onSnapshot(articlesRef, (snap) => {
+
+    const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {
         setArticles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       } else {
-        // Fallback data
-        setArticles([
-          { id: "news-1", title: "Bocoran Desain Terbaru Lini Flagship", category: "Rumor", imageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500", publishedAt: "10 Jun 2026", excerpt: "Informasi internal pemasok layar..." },
-          { id: "news-2", title: "Chipset Fabrikasi 3nm Produksi Massal", category: "Teknologi", imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500", publishedAt: "09 Jun 2026", excerpt: "Fabrikasi chipset terbaru..." }
-        ]);
+        setArticles(FALLBACK_ARTICLES);
       }
     });
     return unsub;
