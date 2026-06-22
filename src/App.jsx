@@ -7,15 +7,13 @@ import Compose from "./pages/Compose";
 import PostDetail from "./pages/PostDetail";
 import BrandStream from "./pages/BrandStream";
 import GadgetSearch from "./pages/GadgetSearch";
-import GadgetDetail from "./pages/GadgetDetail";
+import GadgetDetail from "./pages/GadgetDetailWrapper";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Leaderboard from "./pages/Leaderboard";
 import News from "./pages/News";
-import NewsDetail from "./pages/NewsDetail"; 
-import AdminChat from "./pages/AdminChat";
-import AdminGadgets from "./pages/AdminGadgets";
+import NewsDetail from "./pages/NewsDetail";
 import "./index.css";
 
 function ProtectedRoute({ children }) {
@@ -43,9 +41,7 @@ function AppRoutes() {
         <Route path="/profile/:uid" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/admin/chats" element={<ProtectedRoute><AdminChat /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/admin/gadgets" element={<AdminGadgets />} />
       </Routes>
     </>
   );

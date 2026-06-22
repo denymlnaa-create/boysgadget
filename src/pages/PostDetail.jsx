@@ -8,6 +8,7 @@ import {
 import { db } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
 import styles from "./PostDetail.module.css";
+import { getCachedPhoneImage } from "../utils/imageUtils";
 
 function renderText(text) {
   if (!text) return null;
@@ -111,6 +112,7 @@ export default function PostDetail() {
   const [commentText, setCommentText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [phoneImage, setPhoneImage] = useState(null);
   const [likeCount, setLikeCount] = useState(0);
 
   useEffect(() => {
@@ -128,6 +130,13 @@ export default function PostDetail() {
     });
     return unsub;
   }, [id, user?.uid]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!post?.gadgetTag) return;
+    getCachedPhoneImage(null, post.gadgetTag).then(img => { if (mounted && img) setPhoneImage(img); }).catch(() => {});
+    return () => { mounted = false };
+  }, [post?.gadgetTag]);
 
   const submitComment = async () => {
     if (!commentText.trim()) return;
@@ -191,7 +200,7 @@ export default function PostDetail() {
 
   return (
     <div className="page">
-      <button className="btn-ghost" onClick={() => navigate(-1)} style={{marginBottom:12}}>
+      <button className="btn btn-secondary" onClick={() => navigate(-1)} style={{marginBottom:12}}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Kembali
       </button>
@@ -216,7 +225,11 @@ export default function PostDetail() {
 
         {post.gadgetTag && (
           <Link to={`/gadget/${encodeURIComponent(post.gadgetTag)}`} className={styles.gadgetChip}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8l-1 4h10z"/></svg>
+            {phoneImage ? (
+              <img src={phoneImage} alt={post.gadgetTag} style={{ width: 36, height: 26, objectFit: 'cover', borderRadius: 6, marginRight: 8 }} />
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8l-1 4h10z"/></svg>
+            )}
             {post.gadgetTag}
           </Link>
         )}
@@ -231,7 +244,7 @@ export default function PostDetail() {
             background: "none",
             border: "none",
             cursor: user ? "pointer" : "default",
-            color: isLiked ? "#ef4444" : "var(--text2)",
+            color: isLiked ? "#ef4444" : "var(--ink-muted-48)",
             fontSize: "13px",
             padding: 0
           }}
@@ -261,7 +274,7 @@ export default function PostDetail() {
 
       <div className={styles.comments}>
         {comments.length === 0
-          ? <p style={{color:"var(--text2)",fontSize:14,padding:"20px 0"}}>Belum ada komentar.</p>
+          ? <p style={{color:"var(--ink-muted-48)",fontSize:14,padding:"20px 0"}}>Belum ada komentar.</p>
           : comments.map(c => <Comment key={c.id} comment={c} postId={id} />)
         }
       </div>

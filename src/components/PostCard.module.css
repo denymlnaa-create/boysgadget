@@ -1,43 +1,45 @@
 .card {
   display: block;
-  border-bottom: 1px solid var(--border);
-  padding: 16px;
-  transition: background 0.15s;
-  color: var(--text);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  color: var(--body);
 }
 
-.card:hover { background: var(--bg2); }
+.card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
 
 .header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .meta { display: flex; flex-direction: column; gap: 2px; }
 
 .name {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.name:hover { color: var(--accent); }
+.name:hover { color: var(--primary); }
 
-.time { font-size: 12px; color: var(--text2); }
+.time { font-size: 12px; color: var(--ink-muted-48); }
 
 .body {
   font-size: 15px;
   line-height: 1.6;
   margin-bottom: 10px;
   white-space: pre-wrap;
-  word-break: break-word;
+  color: var(--ink-muted-48);
 }
 
 .tagLink {
-  color: var(--accent);
-  font-weight: 500;
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .tagLink:hover { text-decoration: underline; }
@@ -55,23 +57,24 @@
 .gadgetChip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 12px;
-  color: var(--text2);
+  gap: 8px;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--ink-muted-48);
   margin-bottom: 10px;
 }
 
-.gadgetLink { color: var(--text2); }
-.gadgetLink:hover { color: var(--accent); }
+.gadgetLink { color: var(--ink-muted-48); }
+.gadgetLink:hover { color: var(--primary); }
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.gadgetThumb {
+  width: 40px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .likeBtn {
@@ -79,18 +82,18 @@
   align-items: center;
   gap: 5px;
   background: transparent;
-  color: var(--text2);
+  color: var(--ink-muted-48);
   padding: 4px 0;
   font-size: 13px;
 }
 
-.likeBtn:hover { color: var(--danger); }
-.likeBtn.liked { color: var(--danger); }
+.likeBtn:hover { color: var(--primary); }
+.likeBtn.liked { color: var(--primary); }
 
 .commentCount {
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  color: var(--text2);
+  color: var(--ink-muted-48);
 }

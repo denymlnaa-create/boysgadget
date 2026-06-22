@@ -1,22 +1,22 @@
 .adminDashboard {
   display: flex;
-  height: calc(100vh - 70px);
-  background-color: #0b0b0c;
-  color: white;
-  font-family: sans-serif;
+  height: calc(100vh - 80px);
+  background-color: var(--surface-black);
+  color: var(--body-on-dark);
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 .sidebar {
   width: 350px;
-  border-right: 1px solid #27272a;
+  border-right: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
-  background-color: #121214;
+  background-color: var(--tile-1);
 }
 
 .sidebarHeader {
   padding: 20px;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .sidebarHeader h3 {
@@ -34,29 +34,29 @@
   align-items: center;
   gap: 12px;
   padding: 15px;
-  border-bottom: 1px solid #1c1c1f;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.12s ease;
 }
 
 .roomItem:hover {
-  background-color: #1c1c1f;
+  background-color: rgba(255,255,255,0.02);
 }
 
 .activeRoom {
-  background-color: #1c1c1f;
+  background-color: rgba(255,255,255,0.02);
 }
 
 .roomAvatar {
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background-color: #27272a;
+  background-color: var(--tile-1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #1a5cff;
+  color: var(--primary);
 }
 
 .roomDetails {
@@ -79,7 +79,7 @@
 
 .time {
   font-size: 11px;
-  color: #71717a;
+  color: var(--ink-muted-48);
 }
 
 .roomBottom {
@@ -91,7 +91,7 @@
 .lastMessage {
   margin: 0;
   font-size: 13px;
-  color: #a1a1aa;
+  color: var(--ink-muted-48);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -101,7 +101,7 @@
 .unreadBadge {
   width: 8px;
   height: 8px;
-  background-color: #1a5cff;
+  background-color: var(--primary);
   border-radius: 50%;
 }
 
@@ -109,13 +109,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #0b0b0c;
+  background-color: var(--surface-black);
 }
 
 .chatHeader {
   padding: 15px 20px;
-  background-color: #121214;
-  border-bottom: 1px solid #27272a;
+  background-color: var(--tile-1);
+  border-bottom: 1px solid var(--hairline);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -128,7 +128,7 @@
 
 .chatHeader span {
   font-size: 12px;
-  color: #71717a;
+  color: var(--ink-muted-48);
 }
 
 .chatBody {
@@ -160,14 +160,14 @@
 }
 
 .adminRow .messageBubble {
-  background-color: #1a5cff;
-  color: white;
+  background-color: var(--primary);
+  color: var(--body-on-dark);
   border-radius: 12px 12px 2px 12px;
 }
 
 .userRow .messageBubble {
-  background-color: #27272a;
-  color: #e4e4e7;
+  background-color: var(--tile-1);
+  color: var(--body-on-dark);
   border-radius: 12px 12px 12px 2px;
 }
 
@@ -179,25 +179,25 @@
 
 .chatFooter {
   padding: 15px 20px;
-  background-color: #121214;
-  border-top: 1px solid #27272a;
+  background-color: var(--tile-1);
+  border-top: 1px solid var(--hairline);
   display: flex;
   gap: 12px;
 }
 
 .chatFooter input {
   flex: 1;
-  background-color: #27272a;
-  border: 1px solid #3f3f46;
+  background-color: var(--tile-2);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 12px;
-  color: white;
+  color: var(--body-on-dark);
   outline: none;
 }
 
 .chatFooter button {
-  background-color: #1a5cff;
-  color: white;
+  background-color: var(--primary);
+  color: var(--body-on-dark);
   border: none;
   padding: 0 24px;
   border-radius: 8px;
@@ -206,7 +206,7 @@
 }
 
 .chatFooter button:hover {
-  background-color: #0046e5;
+  background-color: var(--primary-focus);
 }
 
 .noChatSelected {
@@ -214,5 +214,5 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #71717a;
+  color: var(--ink-muted-48);
 }

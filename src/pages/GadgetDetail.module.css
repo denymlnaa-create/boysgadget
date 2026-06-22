@@ -1,56 +1,196 @@
-.heroWrap { display: flex; align-items: center; gap: 16px; padding: 0 16px 16px; }
-
-.heroImg { width: 80px; height: 80px; object-fit: contain; background: var(--bg3); border-radius: var(--radius-sm); padding: 6px; }
-
-.heroName { font-size: 16px; font-weight: 600; }
-.heroSub { font-size: 13px; color: var(--text2); margin-top: 4px; }
-
-.tabs {
+.page {
+  width: 100%;
+  margin: 0;
+  padding: 0;
   display: flex;
-  border-bottom: 1px solid var(--border);
-  border-top: 1px solid var(--border);
+  flex-direction: column;
 }
 
-.tabs button {
+/* Back Bar - Sticky */
+.backBar {
+  position: sticky;
+  top: 44px;
+  background: var(--canvas-parchment);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--hairline);
+  z-index: 10;
+}
+
+.backTitle {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ink);
   flex: 1;
-  background: transparent;
-  color: var(--text2);
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+/* Full-Bleed Light Tile */
+.tileLight {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  background: var(--canvas);
+  padding: 80px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  position: relative;
+  overflow: hidden;
+}
 
-.specsTable { padding: 8px 16px; }
+.heroGrid {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
 
-.specSection { margin-bottom: 20px; }
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.heroTitle {
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1.07;
+  letter-spacing: -0.28px;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Display", sans-serif;
+  color: var(--ink);
+}
+
+.heroBrand {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.heroDesc {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: -0.374px;
+  color: var(--ink-muted-48);
+  margin: 0;
+  max-width: 500px;
+}
+
+.scoreBadges {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 102, 204, 0.06);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 120px;
+}
+
+.badgeLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-muted-48);
+  letter-spacing: 0.5px;
+}
+
+.badgeValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* ... bagian lain tetap sama, perbarui bagian di bawah ini ... */
+
+.heroImage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Hapus aspect-ratio agar tidak memotong foto */
+  background: var(--canvas);
+  border-radius: 18px;
+  border: 1px solid var(--hairline);
+  padding: 40px;
+  /* Shadow Apple yang benar sesuai DESIGN.md */
+  box-shadow: 0 3px 30px 0 rgba(0, 0, 0, 0.22); 
+  height: auto;
+  min-height: 400px;
+}
+
+.heroImage img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.tileLight {
+  width: 100%; /* Ubah dari 100vw agar tidak overflow horizontal */
+  background: var(--canvas);
+  padding: 80px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.heroTitle {
+  font-family: "SF Pro Display", system-ui, -apple-system, sans-serif;
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1.07;
+  letter-spacing: -0.28px; /* Apple tight tracking */
+  color: var(--ink);
+  margin: 0;
+}
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface-pearl); /* Menggunakan token pearl */
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 16px 20px;
+  min-width: 140px;
+}
+
+.specSection {
+  background: var(--canvas); /* Tile spesifikasi di atas parchment */
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid var(--hairline);
+}
 
 .specTitle {
-  font-size: 12px;
+  font-family: "SF Pro Text", sans-serif;
+  font-size: 14px; /* Sedikit lebih besar agar terbaca */
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  margin-bottom: 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border);
+  color: var(--ink); /* Bukan blue, agar lebih tenang */
+  letter-spacing: -0.224px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--divider-soft);
+  padding-bottom: 8px;
 }
 
-.specRow {
-  display: flex;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
+.title-large {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: -0.28px; /* Ini kunci agar terlihat seperti Apple */
+  line-height: 1.07;
 }
-
-.specKey {
-  color: var(--text2);
-  min-width: 120px;
-  flex-shrink: 0;
-}
-
-.specVal { color: var(--text); line-height: 1.5; }

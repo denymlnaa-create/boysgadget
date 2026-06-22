@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { Link } from "react-router-dom";
+import { getCachedPhoneImage } from "../utils/imageUtils";
 
 export default function Leaderboard() {
   const [gadgets, setGadgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("scoreGlobal");
+  const [imageMap, setImageMap] = useState({});
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -24,6 +26,18 @@ export default function Leaderboard() {
     fetchLeaderboard();
   }, [activeTab]);
 
+  useEffect(() => {
+    let mounted = true;
+    if (gadgets.length === 0) return;
+    Promise.all(gadgets.map(g => getCachedPhoneImage(g.brand, g.name).catch(() => null))).then(imgs => {
+      if (!mounted) return;
+      const map = {};
+      imgs.forEach((img, i) => { if (img) map[gadgets[i].id] = img; });
+      setImageMap(map);
+    }).catch(() => {});
+    return () => { mounted = false };
+  }, [gadgets]);
+
   const tabs = [
     { id: "scoreGlobal", label: "Peringkat Global" },
     { id: "scoreCamera", label: "Kamera" },
@@ -37,8 +51,8 @@ export default function Leaderboard() {
   return (
     <div className="page">
       <div style={{ marginBottom: 24, paddingTop: 20 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: "#fff" }}>Peringkat Gadget Tertinggi</h2>
-        <p style={{ color: "var(--text2, #aaa)", fontSize: 14 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: "var(--ink)" }}>Peringkat Gadget Tertinggi</h2>
+        <p style={{ color: "var(--ink-muted-48)", fontSize: 14 }}>
           Daftar skor pengujian performa gadget objektif yang diuji langsung oleh tim BoysGadget.
         </p>
       </div>
@@ -48,13 +62,15 @@ export default function Leaderboard() {
         {tabs.map(tab => (
           <button
             key={tab.id}
-            className={`btn-${activeTab === tab.id ? "primary" : "ghost"}`}
+            className={activeTab === tab.id ? 'btn-primary' : 'btn'}
             style={{ 
               padding: "8px 16px", 
               fontSize: 13, 
               borderRadius: 20, 
               whiteSpace: "nowrap",
-              cursor: "pointer"
+              cursor: "pointer",
+              background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
+              color: activeTab === tab.id ? '#fff' : 'var(--ink-muted-48)'
             }}
             onClick={() => setActiveTab(tab.id)}
           >
@@ -64,10 +80,10 @@ export default function Leaderboard() {
       </div>
 
       {/* Tabel Leaderboard */}
-      <div style={{ backgroundColor: "#1e1e1e", borderRadius: 8, overflow: "hidden", border: "1px solid #333" }}>
+      <div style={{ backgroundColor: "var(--surface-tile-3)", borderRadius: 8, overflow: "hidden", border: "1px solid var(--hairline)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, textAlign: "left" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #333", backgroundColor: "#252526", color: "var(--text2, #aaa)" }}>
+            <tr style={{ borderBottom: "1px solid var(--hairline)", backgroundColor: "var(--surface-tile-1)", color: "var(--body-on-dark)" }}>
               <th style={{ padding: "16px", width: "60px", textAlign: "center" }}>Rank</th>
               <th style={{ padding: "16px" }}>Gadget</th>
               <th style={{ padding: "16px", width: "120px" }}>Brand</th>
@@ -79,22 +95,22 @@ export default function Leaderboard() {
           <tbody>
             {gadgets.length === 0 ? (
               <tr>
-                <td colSpan="4" style={{ padding: "30px", textAlign: "center", color: "var(--text2, #aaa)" }}>
+                <td colSpan="4" style={{ padding: "30px", textAlign: "center", color: "var(--ink-muted-48)" }}>
                   Belum ada data penilaian gadget di Firestore.
                 </td>
               </tr>
             ) : (
               gadgets.map((gadget, index) => (
-                <tr key={gadget.id} style={{ borderBottom: "1px solid #2d2d2d" }}>
+                <tr key={gadget.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
                   {/* Nomor Urut / Peringkat */}
-                  <td style={{ padding: "16px", textAlign: "center", fontWeight: 700, color: index === 0 ? "#eab308" : index === 1 ? "#cbd5e1" : index === 2 ? "#b45309" : "#fff" }}>
+                  <td style={{ padding: "16px", textAlign: "center", fontWeight: 700, color: index === 0 ? "#eab308" : index === 1 ? "#cbd5e1" : index === 2 ? "#b45309" : "var(--body-on-dark)" }}>
                     #{index + 1}
                   </td>
                   {/* Detail Gambar & Nama Gadget */}
                   <td style={{ padding: "16px" }}>
-                    <Link to={`/gadget/${encodeURIComponent(gadget.name)}`} style={{ display: "flex", alignItems: "center", gap: 12, color: "#fff", textDecoration: "none", fontWeight: 500 }}>
+                    <Link to={`/gadget/${encodeURIComponent(gadget.name)}`} style={{ display: "flex", alignItems: "center", gap: 12, color: "var(--body-on-dark)", textDecoration: "none", fontWeight: 500 }}>
                       <img 
-                        src={gadget.imageUrl || "https://placeholder.co/40x40?text=HP"} 
+                        src={imageMap[gadget.id] || gadget.imageUrl || "https://via.placeholder.com/40"} 
                         alt={gadget.name} 
                         style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", backgroundColor: "#333" }}
                       />
@@ -102,11 +118,11 @@ export default function Leaderboard() {
                     </Link>
                   </td>
                   {/* Nama Brand */}
-                  <td style={{ padding: "16px", color: "var(--text2, #aaa)" }}>{gadget.brand}</td>
+                  <td style={{ padding: "16px", color: "var(--ink-muted-48)" }}>{gadget.brand}</td>
                   {/* Nilai Dinamis Sesuai Tab yang Dipilih */}
                   <td style={{ padding: "16px", textAlign: "center" }}>
                     <span style={{ 
-                      backgroundColor: activeTab === "scoreGlobal" ? "var(--accent, #3b82f6)" : "#22c55e", 
+                      backgroundColor: activeTab === "scoreGlobal" ? "var(--primary)" : "#22c55e", 
                       color: "#fff", 
                       padding: "4px 10px", 
                       borderRadius: 6, 

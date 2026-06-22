@@ -4,7 +4,7 @@
   justify-content: space-between;
   padding: 12px 0;
   margin-bottom: 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .composer {
@@ -12,16 +12,16 @@
   gap: 12px;
 }
 
-.inputArea { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.inputArea { flex: 1; display: flex; flex-direction: column; gap: 12px; }
 
 .textarea {
   resize: none;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.6;
   border: none;
   background: transparent;
   padding: 0;
-  min-height: 120px;
+  min-height: 140px;
 }
 
 .textarea:focus { border: none; }
@@ -30,10 +30,11 @@
 
 .preview {
   max-width: 100%;
-  max-height: 300px;
+  max-height: 360px;
   object-fit: cover;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   display: block;
+  border:1px solid var(--hairline);
 }
 
 .removeImg {
@@ -54,18 +55,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 12px;
 }
 
-.counter { font-size: 12px; }
+.counter { font-size: 13px; color: var(--ink-muted-48); }
 
 .hints { display: flex; gap: 12px; flex-wrap: wrap; }
 
 .hint {
-  font-size: 12px;
-  color: var(--text2);
-  background: var(--bg3);
+  font-size: 13px;
+  color: var(--ink-muted-48);
+  background: var(--canvas-parchment);
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 6px 12px;
 }

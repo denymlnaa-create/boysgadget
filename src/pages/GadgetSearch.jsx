@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./GadgetSearch.module.css";
+import { getCachedPhoneImage } from "../utils/imageUtils";
 
 const PHONE_HISTORY_KEY = "NhkPMg==";
 
@@ -18,7 +19,17 @@ export default function GadgetSearch() {
     try {
       const res = await fetch(`https://phone-specs-api.azharimm.dev/search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
-      setResults(data.data?.phones || []);
+      const phones = data.data?.phones || [];
+      // Fetch Unsplash images in parallel and attach to results
+      const withImages = await Promise.all(phones.map(async (p) => {
+        try {
+          const img = await getCachedPhoneImage(p.brand, p.phone_name);
+          return { ...p, image: img || p.image };
+        } catch {
+          return p;
+        }
+      }));
+      setResults(withImages);
     } catch {
       setResults([]);
     }
@@ -42,7 +53,7 @@ export default function GadgetSearch() {
       {loading && <div className="spinner" />}
 
       {searched && !loading && results.length === 0 && (
-        <p style={{color:"var(--text2)",fontSize:14,textAlign:"center",padding:"30px 0"}}>Gadget tidak ditemukan.</p>
+        <p style={{color:"var(--ink-muted-48)",fontSize:14,textAlign:"center",padding:"30px 0"}}>Gadget tidak ditemukan.</p>
       )}
 
       <div className={styles.grid}>

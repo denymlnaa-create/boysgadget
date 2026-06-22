@@ -1,25 +1,25 @@
-.title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+.title { font-size: 22px; font-weight: 700; margin-bottom: 18px; }
 
-.searchForm { display: flex; gap: 8px; margin-bottom: 20px; }
+.searchForm { display: flex; gap: 12px; margin-bottom: 24px; }
 .searchForm input { flex: 1; }
 
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
 
 .phoneCard {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
-.phoneCard:hover { border-color: var(--accent); transform: translateY(-2px); }
+.phoneCard:hover { transform: translateY(-6px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
 
-.phoneImg { width: 100%; height: 140px; object-fit: contain; background: var(--bg3); padding: 8px; }
+.phoneImg { width: 100%; height: 160px; object-fit: contain; background: var(--canvas); padding: 12px; }
 
-.phoneInfo { padding: 10px; }
+.phoneInfo { padding: 14px; }
 
-.phoneName { font-size: 13px; font-weight: 500; line-height: 1.3; margin-bottom: 3px; }
+.phoneName { font-size: 15px; font-weight: 600; line-height: 1.3; margin-bottom: 6px; color: var(--ink); }
 
-.phoneBrand { font-size: 11px; color: var(--text2); }
+.phoneBrand { font-size: 13px; color: var(--ink-muted-48); }

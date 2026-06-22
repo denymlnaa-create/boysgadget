@@ -16,16 +16,16 @@
 
 .logo {
   font-size: 28px;
-  font-weight: 800;
-  color: var(--accent);
+  font-weight: 600;
+  color: var(--ink);
   text-align: center;
-  letter-spacing: -1px;
+  letter-spacing: -0.8px;
 }
 
 .sub {
   text-align: center;
   font-size: 14px;
-  color: var(--text2);
+  color: var(--ink-muted-48);
 }
 
 .form {
@@ -37,7 +37,7 @@
 .error {
   font-size: 13px;
   color: var(--danger);
-  background: #2d1010;
+  background: rgba(255,0,0,0.04);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
 }
@@ -52,19 +52,19 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--surface-pearl);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
-  color: var(--text);
-  padding: 10px;
-  font-size: 14px;
+  color: var(--ink-muted-48);
+  padding: 12px;
+  font-size: 15px;
   width: 100%;
 }
 
-.googleBtn:hover { background: var(--bg2); }
+.googleBtn:hover { background: var(--canvas); }
 
 .toggle {
   text-align: center;
   font-size: 13px;
-  color: var(--text2);
+  color: var(--ink-muted-48);
 }

@@ -57,7 +57,7 @@ export default function Settings() {
   return (
     <div className="page">
       <div className={styles.header}>
-        <button className="btn-ghost" onClick={() => navigate(-1)}>
+        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         </button>
         <h2 style={{fontSize:16,fontWeight:500}}>Edit Profil</h2>
@@ -71,7 +71,7 @@ export default function Settings() {
             className={styles.avatarPreview}
             alt="avatar"
           />
-          <label className="btn-outline" style={{cursor:"pointer",padding:"7px 16px",fontSize:13}}>
+          <label className="btn btn-secondary" style={{cursor:"pointer",padding:"7px 16px",fontSize:13}}>
             Ganti Foto
             <input type="file" accept="image/*" onChange={handleAvatar} style={{display:"none"}} />
           </label>

@@ -36,12 +36,12 @@ export default function Profile() {
   return (
     <div style={{maxWidth:600,margin:"0 auto"}}>
       <div className={styles.headerBar}>
-        <button className="btn-ghost" onClick={() => navigate(-1)}>
+        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         </button>
         <span style={{fontSize:15,fontWeight:500}}>{profile.name}</span>
         {isOwn && (
-          <Link to="/settings" className="btn-outline" style={{padding:"6px 14px",fontSize:13}}>Edit Profil</Link>
+          <Link to="/settings" className="btn btn-secondary" style={{padding:"6px 14px",fontSize:13}}>Edit Profil</Link>
         )}
       </div>
 
@@ -70,7 +70,7 @@ export default function Profile() {
 
       <div>
         {posts.length === 0
-          ? <p style={{color:"var(--text2)",fontSize:14,padding:"40px 20px",textAlign:"center"}}>Belum ada postingan.</p>
+          ? <p style={{color:"var(--ink-muted-48)",fontSize:14,padding:"40px 20px",textAlign:"center"}}>Belum ada postingan.</p>
           : posts.map(p => <PostCard key={p.id} post={p} />)
         }
       </div>

@@ -1,16 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 // 🟢 TAMBAHAN: Import collection, addDoc, dan serverTimestamp dari firebase
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
 import styles from "./PostCard.module.css";
+import { getCachedPhoneImage } from "../utils/imageUtils";
 
 export default function PostCard({ post }) {
   const { user } = useAuth();
   const liked = post.likes?.includes(user?.uid);
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
   const [isLiked, setIsLiked] = useState(liked);
+  const [phoneImage, setPhoneImage] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (post?.gadgetTag) {
+      getCachedPhoneImage(null, post.gadgetTag).then(img => {
+        if (mounted && img) setPhoneImage(img);
+      }).catch(() => {});
+    }
+    return () => { mounted = false };
+  }, [post?.gadgetTag]);
 
   const handleLike = async (e) => {
     e.preventDefault();
@@ -81,7 +93,11 @@ export default function PostCard({ post }) {
 
       {post.gadgetTag && (
         <div className={styles.gadgetChip}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8l-1 4h10z"/></svg>
+          {phoneImage ? (
+            <img src={phoneImage} alt={post.gadgetTag} className={styles.gadgetThumb} />
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8l-1 4h10z"/></svg>
+          )}
           <Link to={`/gadget/${encodeURIComponent(post.gadgetTag)}`} onClick={e => e.stopPropagation()} className={styles.gadgetLink}>
             {post.gadgetTag}
           </Link>

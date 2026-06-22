@@ -97,7 +97,7 @@ export default function Login() {
 
         <div className={styles.dividerRow}>
           <hr className="divider" style={{flex:1}}/>
-          <span style={{fontSize:12, color:"var(--text2)", padding:"0 10px"}}>atau</span>
+          <span style={{fontSize:12, color:"var(--ink-muted-48)", padding:"0 10px"}}>atau</span>
           <hr className="divider" style={{flex:1}}/>
         </div>
 
@@ -108,7 +108,7 @@ export default function Login() {
 
         <p className={styles.toggle}>
           {isRegister ? "Sudah punya akun? " : "Belum punya akun? "}
-          <button className="btn-ghost" style={{padding:"0",color:"var(--accent)"}} onClick={() => setIsRegister(!isRegister)}>
+          <button className="btn btn-secondary" style={{padding:"0",color:"var(--primary)"}} onClick={() => setIsRegister(!isRegister)}>
             {isRegister ? "Masuk" : "Daftar"}
           </button>
         </p>
